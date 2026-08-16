@@ -22,17 +22,12 @@ Phần mềm phân tích độ dày bê tông phun đường hầm từ dữ li�
 
 ### Cài đặt thư viện
 
-
 ```bash
 cd PPS_Report_PC
-pip install -r requirements.txt
+pip install -e .[dev]
 ```
 
-Hoặc sử dụng uv (khuyến nghị):
-
-```bash
-uv pip install -r requirements.txt
-```
+(hoặc `pip install -r requirements.txt` để cài dependency mà không cài package ở chế độ editable)
 
 ## Sử dụng
 
@@ -84,19 +79,18 @@ Ví dụ: `TunnelA#JOB001#143025#Section1.ply`
 
 ```
 PPS_Report_PC/
-├── main.py              # Entry point
-├── requirements.txt     # Dependencies
-├── README.md           # Documentation
-├── core/               # Core logic
-│   ├── ply_loader.py   # PLY file loading
-│   ├── filename_parser.py # Filename parsing
-│   ├── calculator.py   # Area/volume calculation
-│   └── segmentation.py # Point selection
-├── gui/                # GUI components
-│   ├── main_window.py  # Main window
-│   └── viewer_3d.py    # 3D viewer
-└── report/             # Report generation
-    └── pdf_generator.py # PDF reports
+├── main.py                 # Thin entry-point shim (build.spec target)
+├── pyproject.toml          # Package + dependency config (canonical)
+├── requirements.txt        # Kept in sync with pyproject.toml for `pip install -r`
+├── build.spec              # PyInstaller build config
+├── src/pps_report/
+│   ├── __main__.py         # Real entry point: QApplication setup, theme, launch
+│   ├── core/                # Core logic — PLY I/O, calculator, segmentation, layers
+│   ├── gui/                  # PySide6 GUI — main window, 3D viewer, annotations, theme
+│   ├── report/                # PDF report generation (Jinja2 HTML + wkhtmltopdf)
+│   └── utils/                 # Path helpers, misc utilities
+├── tests/                   # pytest suite
+└── scripts/                 # Standalone utility scripts (not part of the package)
 ```
 
 ## Lưu ý
@@ -107,4 +101,38 @@ PPS_Report_PC/
 
 ## License
 
-MIT License
+Ứng dụng dùng các thư viện mã nguồn mở an toàn cho phát hành closed-source:
+PySide6 (LGPL-3, dual-license), VTK (BSD), pyvista/pyvistaqt (MIT), open3d (MIT),
+numpy/scipy (BSD), matplotlib (PSF), jinja2 (BSD), Pillow (HPND), pdfkit (MIT).
+PLY được đọc qua `open3d.t.io` (MIT) — không dùng `plyfile` (GPL-3.0) để tránh
+copyleft khi phát hành bản đóng gói.
+
+PDF được xuất qua `pdfkit` + `wkhtmltopdf` (binary LGPL-2, gọi qua subprocess
+nên không ảnh hưởng license code Python). Bản build cài sẵn `wkhtmltopdf.exe`
+trong gói cài đặt — người dùng cuối không cần tự cài thêm gì.
+
+## Build
+
+```bash
+pip install pyinstaller
+```
+
+Trước khi build lần đầu (hoặc trên máy dev mới), tải sẵn `wkhtmltopdf.exe`
+(không commit vào git vì file lớn — `packages/` nằm trong `.gitignore`) và đặt vào
+`src/pps_report/report/packages/wkhtmltox/bin/wkhtmltopdf.exe`:
+
+```bash
+curl -L -o wkhtmltox.7z https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox-0.12.6-1.mxe-cross-win64.7z
+7z x wkhtmltox.7z -oextracted
+# copy extracted/wkhtmltox/bin/wkhtmltopdf.exe -> src/pps_report/report/packages/wkhtmltox/bin/
+```
+
+Sau đó build:
+
+```bash
+Remove-Item -Recurse -Force build, dist
+pyinstaller build.spec
+```
+
+`build.spec` sẽ tự đóng gói `wkhtmltopdf.exe` cùng ứng dụng (nằm trong
+`src/pps_report/report/`, được bundle vào `dist/.../report/packages/...`).

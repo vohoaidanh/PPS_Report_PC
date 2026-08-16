@@ -1,9 +1,10 @@
 # Tunnel Concrete Thickness Analyzer
-# Requirements for Python 3.9+
+# Kept for `pip install -r requirements.txt` convenience; pyproject.toml is canonical.
+# Requires Python 3.9+
 
 # GUI
-PyQt5>=5.15.0
-PyQt5-sip>=12.0.0
+PySide6>=6.5.0
+qtpy>=2.4.0
 
 # 3D Visualization
 pyvista>=0.43.0
@@ -11,13 +12,15 @@ pyvistaqt>=0.11.0
 vtk>=9.0.0
 
 # Point Cloud Processing
-plyfile>=1.0.0
+# PLY reading uses open3d's tensor I/O (MIT) — plyfile (GPL-3.0) was dropped
+# for license safety in a closed-source distribution.
 numpy>=1.21.0
 scipy>=1.7.0
 open3d>=0.17.0
 
 # PDF Report Generation
-reportlab>=4.0.0
+pdfkit>=1.0.0
+jinja2>=3.0.0
 matplotlib>=3.5.0
 
 # Utilities
